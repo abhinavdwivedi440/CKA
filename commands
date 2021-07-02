@@ -153,3 +153,75 @@ OS Upgrades
 kubectl drain node-name
 kubectl uncordon node-name     # mkes schedulable
 kubectl cordon node-name       # makes unschedulable
+------------------------------------------------------------------------------------------------
+
+Cluster Upgrade
+---------------
+
+kubectl upgrade plan
+kubectl upgrade apply
+kubectl get nodes
+
+
+
+1. upgrade master
+------------------
+
+# first upgrade kubeadm:
+apt-get upgrade -y kubeadm=1.12.0-00
+
+# then upgrade the cluster
+kubeadm upgrade apply v1.12.0
+
+# then upgrade the kubelet
+apt-get upgrade -y kubelet=1.12.0-00
+
+# restart kubelet service
+systemctl restart kubelet
+
+*********************************************
+
+2. uppgrade workers
+-------------------
+
+# upgrade workers one by one
+kubectl drain node-1
+
+# upgrade kubeadm:
+apt-get upgrade -y kubeadm=1.12.0-00
+
+# then upgrade the kubelet
+apt-get upgrade -y kubelet=1.12.0-00
+
+#
+kubeadm upgrade node config --kubelet-version v1.12.0
+
+# restart kubelet service
+systemctl restart kubelet
+
+# make the node schedulable back again
+kubectl uncordon node-1
+
+****************************************************
+
+
+Backup and Restore config
+--------------------------
+
+kubectl get all --all-namespaces -o yaml > all-deploy-services.yaml
+
+
+etcd
+-----
+
+ETCDCTL_API=3 etcdctl snapshot save snapshot.db
+ETCDCTL_API=3 etcdctl snapshot status snapshot.db
+
+# to restore the backup
+------------------------
+
+service kube-apiserver stop
+ETCDCTL_API=3 etcdctl snapshot restore snapshot.db --data-dir /var/lib/etcd-from-backup
+systemctl daemon-reload
+service etcd restart
+service kube-apiserver start
