@@ -1,0 +1,7 @@
+to generate private and public key pair
+---------------------------------------
+
+openssl genrsa -out my-bank.key 1024
+openssl rsa -in my-bank.key -pubout > mybank.pem
+
+
